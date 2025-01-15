@@ -1,0 +1,7 @@
+[package]
+name = "fanboy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proc_mem = "0.1.6"
