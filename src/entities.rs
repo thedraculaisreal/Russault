@@ -1,6 +1,8 @@
 use crate::offsets;
 use crate::math;
 
+//pub const PLAYER_LIST: Vec<Player> = Vec::new();
+
 pub struct Player {
     pub address: usize,
     pub name: String,
@@ -11,9 +13,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(offset: usize, game: &proc_mem::Process) -> Self {
-        let mut address = game.process_base_address + offset;
-        address = game.read_mem::<usize>(address.clone()).expect("couldnt find player address");
+    pub fn new(address: usize, game: &proc_mem::Process) -> Self {
         let health: i32 = game.read_mem::<i32>(address.clone() + offsets::HEALTH).expect("couldnt read health value ");
         let pos: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::POS).expect("couldnt read health value ");
         let yaw: f32 = game.read_mem::<f32>(address.clone() + offsets::YAW).expect("couldnt read yaw value ");
