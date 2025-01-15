@@ -1,7 +1,8 @@
+use std::{thread, time::Duration};
 use crate::offsets;
 use crate::math;
 
-//pub const PLAYER_LIST: Vec<Player> = Vec::new();
+pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
 
 pub struct Player {
     pub address: usize,
@@ -20,7 +21,7 @@ impl Player {
         let pitch: f32 = game.read_mem::<f32>(address.clone() + offsets::PITCH).expect("couldnt read pitch value ");
         let name = Self::read_name(address.clone(), game);
         Self {
-            address, name , health , pos , yaw , pitch ,
+            address , name , health , pos , yaw , pitch ,
         }
     }
     pub fn print_values(&self) {
@@ -39,3 +40,20 @@ impl Player {
         return name
     }
 }   
+
+pub fn entity_list_loop(game: &proc_mem::Process) {
+    // must use unsafe because globaly accessible variables arent memory safe.
+    unsafe { loop {
+        PLAYER_LIST = Vec::new();
+        let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT).expect("couldnt find player_count");
+        let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
+        let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
+        let player = Player::new(local_player_addr, game);
+        PLAYER_LIST.push(player);
+        for i in 1..player_count {
+            let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
+            let player = Player::new(player_address, game);
+            PLAYER_LIST.push(player);
+        }
+    } }
+}
