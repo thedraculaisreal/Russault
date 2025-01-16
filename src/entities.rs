@@ -1,8 +1,17 @@
 use std::{thread, time::Duration};
+
 use crate::offsets;
 use crate::math;
 
 pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
+pub static mut LOCAL_PLAYER: Player = Player {
+    address: 0,
+    name: String::new(),
+    health: 0,
+    pos: math::Vec3::new_const(0.0,0.0,0.0),
+    yaw: 0.0,
+    pitch: 0.0,
+};
 
 pub struct Player {
     pub address: usize,
@@ -39,6 +48,16 @@ impl Player {
         }
         return name
     }
+    pub fn blank() -> Self {
+        Self {
+            address: 0,
+            name: String::new(),
+            health: 0,
+            pos: math::Vec3::default(),
+            yaw: 0.0,
+            pitch: 0.0,
+        }
+    }
 }   
 
 pub fn entity_list_loop(game: &proc_mem::Process) {
@@ -48,8 +67,7 @@ pub fn entity_list_loop(game: &proc_mem::Process) {
         let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT).expect("couldnt find player_count");
         let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
         let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
-        let player = Player::new(local_player_addr, game);
-        PLAYER_LIST.push(player);
+        LOCAL_PLAYER = Player::new(local_player_addr, game);
         for i in 1..player_count {
             let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
             let player = Player::new(player_address, game);
