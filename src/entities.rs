@@ -3,6 +3,8 @@ use std::{thread, time::Duration};
 use crate::offsets;
 use crate::math;
 
+// static global variables for local_player, and our player_list,
+// so we can loop throguh them anywhere within the program.
 pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
 pub static mut LOCAL_PLAYER: Player = Player {
     address: 0,
@@ -47,16 +49,6 @@ impl Player {
             name.push(byte as u8 as char);
         }
         return name
-    }
-    pub fn blank() -> Self {
-        Self {
-            address: 0,
-            name: String::new(),
-            health: 0,
-            pos: math::Vec3::default(),
-            yaw: 0.0,
-            pitch: 0.0,
-        }
     }
 }   
 
