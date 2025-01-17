@@ -40,7 +40,7 @@ impl Player {
         println!("{}, {}, {}, {}, {}", self.pos.x, self.pos.y, self.pos.z, self.yaw, self.pitch);
     }
     fn read_name(offset: usize, game: &proc_mem::Process) -> String {
-        let rsize = 8;
+        let rsize = 16;
         let mut bytes_buffer: Vec<u8> = vec![0u8;rsize];
         // we read 8 bytes, and store them within are string.
         game.read_bytes(offset + offsets::NAME, bytes_buffer.as_mut_ptr(), rsize);
@@ -60,10 +60,11 @@ pub fn entity_list_loop(game: &proc_mem::Process) {
         let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
         let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
         LOCAL_PLAYER = Player::new(local_player_addr, game);
-        for i in 1..player_count {
+        for i in 1..=player_count {
             let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
             let player = Player::new(player_address, game);
             PLAYER_LIST.push(player);
+            println!("{}", PLAYER_LIST.len());
         }
     } }
 }
