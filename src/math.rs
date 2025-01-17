@@ -23,18 +23,6 @@ impl Vec3 {
             z,
         }
     }
-    pub fn subtract(mut self, angle: Vec3) -> Self {
-        self.x -= angle.x;
-        self.y -= angle.y;
-        self.z -= angle.z;
-        self
-    }
-    pub fn multiply_f32(mut self, value: f32) -> Self {
-        self.x *= value;
-        self.y *= value;
-        self.z *= value;
-        self
-    }
     fn calc_length(&mut self) -> f32{
         libm::sqrtf(self.x * self.x + self.y * self.y + self.z * self.z)
     }
@@ -47,7 +35,6 @@ impl Vec3 {
 }
 impl Add for Vec3 {
     type Output = Self;
-    
     fn add(self, other: Self) -> Self {
         Vec3 {
             x: self.x + other.x,
