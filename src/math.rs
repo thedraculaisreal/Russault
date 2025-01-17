@@ -1,7 +1,7 @@
 use libm;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
-#[derive(Default)]
-#[derive(Clone)]
+#[derive(Default ,Copy, Clone)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -22,12 +22,6 @@ impl Vec3 {
             y,
             z,
         }
-    }
-    pub fn add(mut self, angle: Vec3) -> Self {
-        self.x += angle.x;
-        self.y += angle.y;
-        self.z += angle.z;
-        self
     }
     pub fn subtract(mut self, angle: Vec3) -> Self {
         self.x -= angle.x;
@@ -50,21 +44,68 @@ impl Vec3 {
         self.z -= target.z;
         self.calc_length()
     }
-}  
+}
+impl Add for Vec3 {
+    type Output = Self;
+    
+    fn add(self, other: Self) -> Self {
+        Vec3 {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }        
+    }
+}
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;   
+    }
+}
+impl Sub for Vec3 {
+    type Output = Self;
+    
+    fn sub(self, other: Self) -> Self {
+        Vec3 {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }        
+    }
+}
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;   
+    }
+}
+impl Mul for Vec3 {
+    type Output = Self;
 
+    fn mul(self, other: Self) -> Self {
+        Vec3 {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
+        }        
+    }
+}
+impl MulAssign for Vec3 {
+    fn mul_assign(&mut self, other: Self) {
+        self.x *= other.x;
+        self.y *= other.y;
+        self.z *= other.z;    
+    }
+}
 const PI: f32 = 3.14159;
-
 fn radians_to_degrees(radians_angle: f32) -> f32 {
     radians_angle * (180.0 / PI)
 }
-
 pub fn calculate_angle(mut origin: Vec3, target: Vec3) -> Vec3 {
     let mut results: Vec3 = Vec3::new(0.0,0.0,0.0);
-    results.x = radians_to_degrees(-(libm::atan2f(target.x - origin.x, target.y - origin.y)));
-    if results.x <= 90.0 {
-        results.x += 360.0;
-    }
-    results.x -= 180.0; // usually 270, for any other game but 180 for assualt cube cuz of true north compensation.
+    results.x = radians_to_degrees(-(libm::atan2f(origin.x - target.x , origin.y - target.y)));
     results.y = radians_to_degrees(libm::asinf((target.z - origin.z) / origin.calc_distance(target.clone())));
     return results
 }

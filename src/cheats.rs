@@ -1,15 +1,30 @@
 use crate::entities;
 use crate::offsets;
 use crate::math;
+use device_query::{DeviceQuery, DeviceState, Keycode};
 
-static smooth_value: f32 = 0.10;
+static SMOOTH_VALUE: math::Vec3 = math::Vec3 {
+    x: 0.01,
+    y: 0.01,
+    z: 0.01,
+};
+static mut toggle: bool = false;
 
 pub fn find_closest_target(local_player: entities::Player, player_list: Vec<entities::Player>, game: &proc_mem::Process) {
-    for player in player_list {
-        let target_angle = math::calculate_angle(local_player.pos.clone(), player.pos);
-        /*let mut delta_angle = target_angle.subtract(local_player.view_angles.clone());
-        delta_angle = delta_angle.multiply_f32(smooth_value);
-        delta_angle = delta_angle.add(local_player.view_angles.clone());*/ 
-        game.write_mem(local_player.address + offsets::VIEW_ANGLES, target_angle);
+    unsafe {
+    let device_state = DeviceState::new();
+    let keys = device_state.get_keys();
+    if keys.contains(&Keycode::R) {
+        toggle = !toggle;
     }
+    if toggle {
+        for player in player_list {
+            let target_angle = math::calculate_angle(local_player.pos, player.pos);
+            /*let mut delta_angle = target_angle - local_player.view_angles;
+            delta_angle *= SMOOTH_VALUE;
+            delta_angle += local_player.view_angles;
+            println!("{},{}", delta_angle.x, delta_angle.y);*/
+            game.write_mem(local_player.address + offsets::VIEW_ANGLES, target_angle);
+        }
+    } }
 }
