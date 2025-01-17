@@ -11,24 +11,23 @@ pub struct Player {
     pub name: String,
     pub health: i32,
     pub pos: math::Vec3,
-    pub yaw: f32,
-    pub pitch: f32,
+    pub view_angles: math::Vec3,
 }
 
 impl Player {
     pub fn new(address: usize, game: &proc_mem::Process) -> Self {
         let health: i32 = game.read_mem::<i32>(address.clone() + offsets::HEALTH).expect("couldnt read health value ");
         let pos: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::POS).expect("couldnt read health value ");
-        let yaw: f32 = game.read_mem::<f32>(address.clone() + offsets::YAW).expect("couldnt read yaw value ");
-        let pitch: f32 = game.read_mem::<f32>(address.clone() + offsets::PITCH).expect("couldnt read pitch value ");
+        let view_angles: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::VIEW_ANGLES).expect("couldnt read view angles");
+        //let pitch: f32 = game.read_mem::<f32>(address.clone() + offsets::PITCH).expect("couldnt read pitch value ");
         let name = Self::read_name(address.clone(), game);
         Self {
-            address , name , health , pos , yaw , pitch ,
+            address , name , health , pos , view_angles ,
         }
     }
     pub fn print_values(&self) {
         println!("{:x}, {}, {}", self.address, self.health, self.name);
-        println!("{}, {}, {}, {}, {}", self.pos.x, self.pos.y, self.pos.z, self.yaw, self.pitch);
+        println!("{}, {}, {}, {}, {}", self.pos.x, self.pos.y, self.pos.z, self.view_angles.x, self.view_angles.y);
     }
     fn read_name(offset: usize, game: &proc_mem::Process) -> String {
         let rsize = 16;
@@ -50,6 +49,7 @@ pub fn entity_list_loop(game: &proc_mem::Process) {
         let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
         let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
         let local_player: Player = Player::new(local_player_addr, game);
+        //local_player.print_values();
         for i in 1..=player_count {
             let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
             let player = Player::new(player_address, game);
