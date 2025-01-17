@@ -2,18 +2,9 @@ use std::{thread, time::Duration};
 
 use crate::offsets;
 use crate::math;
+use crate::cheats;
 
-// static global variables for local_player, and our player_list,
-// so we can loop throguh them anywhere within the program.
-pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
-pub static mut LOCAL_PLAYER: Player = Player {
-    address: 0,
-    name: String::new(),
-    health: 0,
-    pos: math::Vec3::new_const(0.0,0.0,0.0),
-    yaw: 0.0,
-    pitch: 0.0,
-};
+// not gonna use global vars anymore they are cancer.
 
 pub struct Player {
     pub address: usize,
@@ -53,18 +44,18 @@ impl Player {
 }   
 
 pub fn entity_list_loop(game: &proc_mem::Process) {
-    // must use unsafe because globaly accessible variables arent memory safe.
-    unsafe { loop {
-        PLAYER_LIST = Vec::new();
+    loop {
+        let mut player_list: Vec<Player> = Vec::new();
         let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT).expect("couldnt find player_count");
         let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
         let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
-        LOCAL_PLAYER = Player::new(local_player_addr, game);
+        let local_player: Player = Player::new(local_player_addr, game);
         for i in 1..=player_count {
             let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
             let player = Player::new(player_address, game);
-            PLAYER_LIST.push(player);
-            println!("{}", PLAYER_LIST.len());
+            player_list.push(player);
+            thread::sleep(Duration::from_millis(1));
         }
-    } }
+        cheats::find_closest_target(local_player, player_list, game);
+    } 
 }
