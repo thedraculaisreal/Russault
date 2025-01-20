@@ -15,7 +15,7 @@ pub fn find_closest_target(local_player: entities::Player, player_list: Vec<enti
     unsafe {
 	let device_state = DeviceState::new();
 	let keys = device_state.get_keys();
-	if keys.contains(&Keycode::R) {
+	if keys.contains(&Keycode::B) {
 	    if !LAST_STATE {  
 		TOGGLE = !TOGGLE;  
 		LAST_STATE = true;  
