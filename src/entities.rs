@@ -4,8 +4,17 @@ use crate::offsets;
 use crate::math;
 use crate::cheats;
 
-// not gonna use global vars anymore they are cancer.
+// gonna use global vars anymore they are cancer.
+pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
+pub static mut LOCAL_PLAYER: Player = Player {
+    address: 0,
+    name: String::new(),
+    health: 0,
+    pos: math::Vec3::new_const(0.0,0.0,0.0),
+    view_angles: math::Vec3::new_const(0.0,0.0,0.0),
+};
 
+#[derive(Default , Clone)]
 pub struct Player {
     pub address: usize,
     pub name: String,
@@ -43,19 +52,20 @@ impl Player {
 }   
 
 pub fn entity_list_loop(game: &proc_mem::Process) {
-    loop {
-        let mut player_list: Vec<Player> = Vec::new();
-        let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT).expect("couldnt find player_count");
-        let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
-        let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
-        let local_player: Player = Player::new(local_player_addr, game);
-        //local_player.print_values();
-        for i in 1..=player_count {
-            let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
-            let player = Player::new(player_address, game);
-            player_list.push(player);
-            thread::sleep(Duration::from_millis(1));
-        }
-        cheats::find_closest_target(local_player, player_list, game);
-    } 
+    unsafe {
+	loop {
+            PLAYER_LIST = Vec::new();
+            let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT).expect("couldnt find player_count");
+            let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST).expect("couldnt find entity_list address");
+            let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER).expect("couldnt find entity_list address");
+            LOCAL_PLAYER = Player::new(local_player_addr, game);
+            //local_player.print_values();
+            for i in 1..=player_count {
+		let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
+		let player = Player::new(player_address, game);
+		PLAYER_LIST.push(player);
+		thread::sleep(Duration::from_millis(1));
+            }
+	}
+    }
 }

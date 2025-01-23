@@ -16,6 +16,10 @@ fn main() -> io::Result<()> {
 	let game = Process::with_name("ac_client.exe").expect("Failed to find game");
 	entities::entity_list_loop(&game);
     });
+    thread::spawn(move || {
+	let game = Process::with_name("ac_client.exe").expect("Failed to find game");
+	cheats::run_aimbot(&game);
+    });
     overlay::create_overlay();
     Ok(())
 }
