@@ -1,9 +1,13 @@
 extern crate glium;
 use crate::offsets;
+use crate::entities;
+use crate::math;
 use glium::winit;
 use crate::overlay::glium::Surface;
 use crate::overlay::winit::window::WindowAttributes;
 use proc_mem::Process;
+use std::thread;
+use std::time::Duration;
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
 
 #[derive(Copy, Clone)]
@@ -13,63 +17,74 @@ struct Vertex {
 implement_vertex!(Vertex, position);
 
 static WINDOW_WIDTH: u32 = 1000;
-static WINDOW_HEIGHT: u32 = 700;
+static WINDOW_HEIGHT: u32 = 700; 
 
 fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
-    let pos_x: f32 = -100.0;
-    let pos_y: f32 = -100.0;
-    let multiple: f32 = 2.0;
-    let shape = vec![
-	Vertex { position: [ pos_x, pos_y + 100.0 * multiple ] },
-	Vertex { position: [ pos_x + 50.0 * multiple, pos_y + 100.0 * multiple] },
-	Vertex { position: [ pos_x + 50.0 * multiple, pos_y] },
-        Vertex { position: [ pos_x, pos_y] },
-	Vertex { position: [ pos_x, pos_y + 100.0 * multiple ] }
-    ];
-    
-    let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::LineStrip);
+    unsafe {
+	let mut all_shapes = Vec::new();
+	for player in entities::PLAYER_LIST.clone() {
+	    let pos: math::Vec3 = math::world_to_screen(player.pos, view_matrix, 1000.0, 700.0);
+	    let multiple: f32 = 1.0;
+	    
+	    all_shapes.push(Vertex { position: [pos.x, pos.y + 100.0 * multiple] });
+            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y + 100.0 * multiple] });
 
-    let vertex_shader_src = r#"
-        #version 140
+            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y + 100.0 * multiple] });
+            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y] });
 
-        in vec2 position;
-        uniform mat4 transform;
+            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y] });
+            all_shapes.push(Vertex { position: [pos.x, pos.y] });
 
-        void main() {
+            all_shapes.push(Vertex { position: [pos.x, pos.y] }); 
+            all_shapes.push(Vertex { position: [pos.x, pos.y + 100.0 * multiple] });
+	}
+	if all_shapes.is_empty() {
+	    return
+	}
+	let vertex_buffer = glium::VertexBuffer::new(display, &all_shapes).unwrap();
+	let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
+
+	let vertex_shader_src = r#"
+            #version 140
+
+            in vec2 position;
+            uniform mat4 transform;
+
+            void main() {
             gl_Position = transform * vec4(position, 0.0, 1.0);
-        }
-    "#;
+            }
+            "#;
 
-    let fragment_shader_src = r#"
-        #version 140
+	let fragment_shader_src = r#"
+            #version 140
 
-        out vec4 color;
+            out vec4 color;
 
-        void main() {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-    "#;
+            void main() {
+                color = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+            "#;
 
-    let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
+	let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
-    let (width, height) = display.get_framebuffer_dimensions();
-    let scale_x = 2.0 / width as f32;
-    let scale_y = 2.0 / height as f32;
-    let transform = [
-        [scale_x, 0.0, 0.0, 0.0],
-        [0.0, scale_y, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
-    let uniforms = uniform! {
-        transform: transform
-    };
-    let mut target = display.draw();
-    target.clear_color(0.0, 0.0, 0.0, 0.0);
-    target.draw(&vertex_buffer, &indices, &program, &uniforms,
-        &Default::default()).unwrap();
-    target.finish().unwrap();
+	let (width, height) = display.get_framebuffer_dimensions();
+	let scale_x = 2.0 / width as f32;
+	let scale_y = 2.0 / height as f32;
+	let transform = [
+	    [scale_x, 0.0, 0.0, 0.0],
+	    [0.0, scale_y, 0.0, 0.0],
+	    [0.0, 0.0, 1.0, 0.0],
+	    [0.0, 0.0, 0.0, 1.0f32],
+	];
+	let uniforms = uniform! {
+	    transform: transform
+	};
+	let mut target = display.draw();
+	target.clear_color(0.0, 0.0, 0.0, 0.0);
+	target.draw(&vertex_buffer, &indices, &program, &uniforms,
+		    &Default::default()).unwrap();
+	target.finish().unwrap();
+    }
 }
 
 #[allow(deprecated)]
@@ -92,9 +107,10 @@ pub fn create_overlay() {
             glium::winit::event::Event::WindowEvent { event, .. } => match event {
 		glium::winit::event::WindowEvent::RedrawRequested => {
 		    // drawing to screen.
-		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(game.process_base_address + offsets::VIEW_MATRIX)
+		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(offsets::VIEW_MATRIX)
 			.expect("couldnt find view_matrix");
 		    create_shapes(&display, view_matrix);
+		    window.request_redraw();
 		},
 		glium::winit::event::WindowEvent::CloseRequested => {
 		    window_target.exit()

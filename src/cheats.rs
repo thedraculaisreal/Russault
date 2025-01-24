@@ -49,7 +49,6 @@ pub fn find_closest_target(game: &proc_mem::Process) {
 }
 
 pub fn run_aimbot(game: &proc_mem::Process) {
-    thread::sleep(Duration::from_millis(1000));
     loop {
 	find_closest_target(game);
     }

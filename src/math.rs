@@ -116,9 +116,9 @@ pub fn world_to_screen(pos: Vec3, matrix: [f32; 16], window_height: f32, window_
     camera_coords.z = pos.x * matrix[2] + pos.y * matrix[6] + pos.z * matrix[10] + matrix[14];
     camera_coords.w = pos.x * matrix[3] + pos.y * matrix[7] + pos.z * matrix[11] + matrix[15];
     // if off screen return blank vec
-    if camera_coords.w < 0.1 {
+    /*if camera_coords.w > 0.1 {
 	return Vec3::new(0.0, 0.0, 0.0);
-    }
+    }*/
 
     let mut ndc = Vec3::new(0.0, 0.0, 0.0);
     ndc.x = camera_coords.x / camera_coords.w;
@@ -130,5 +130,5 @@ pub fn world_to_screen(pos: Vec3, matrix: [f32; 16], window_height: f32, window_
     screen.y = (1.0 - (ndc.y * 0.5 + 0.5)) * window_height; 
     screen.z = ndc.z;
 
-    return screen
+    return screen 
 }
