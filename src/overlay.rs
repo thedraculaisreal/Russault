@@ -1,7 +1,9 @@
 extern crate glium;
+use crate::offsets;
 use glium::winit;
 use crate::overlay::glium::Surface;
 use crate::overlay::winit::window::WindowAttributes;
+use proc_mem::Process;
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
 
 #[derive(Copy, Clone)]
@@ -10,7 +12,10 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position);
 
-fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>) {
+static WINDOW_WIDTH: u32 = 1000;
+static WINDOW_HEIGHT: u32 = 700;
+
+fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
     let pos_x: f32 = -100.0;
     let pos_y: f32 = -100.0;
     let multiple: f32 = 2.0;
@@ -69,27 +74,27 @@ fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::Wind
 
 #[allow(deprecated)]
 pub fn create_overlay() {
-    let width: u32 = 1000;
-    let height: u32 = 700;
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().expect("event loop building");
     let window_builder = WindowAttributes::new()
 	.with_transparent(true)
 	.with_title("Russault overlay")
 	.with_window_level(winit::window::WindowLevel::AlwaysOnTop)
 	.with_active(false)
-	.with_inner_size(winit::dpi::LogicalSize::new(width, height))
+	.with_inner_size(winit::dpi::LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
 	.with_position(winit::dpi::Position::Logical(winit::dpi::LogicalPosition::new(345.0, 150.0)))
 	.with_decorations(false);
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().set_window_builder(window_builder).build(&event_loop);
     let _ = window.set_cursor_hittest(false);
-    // drawing
-    create_shapes(&display);
     // event_loop
+    let game = Process::with_name("ac_client.exe").expect("Failed to find game");
     let _ = event_loop.run(move |event, window_target| {
 	match event {
             glium::winit::event::Event::WindowEvent { event, .. } => match event {
 		glium::winit::event::WindowEvent::RedrawRequested => {
-		    create_shapes(&display);
+		    // drawing to screen.
+		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(game.process_base_address + offsets::VIEW_MATRIX)
+			.expect("couldnt find view_matrix");
+		    create_shapes(&display, view_matrix);
 		},
 		glium::winit::event::WindowEvent::CloseRequested => {
 		    window_target.exit()
