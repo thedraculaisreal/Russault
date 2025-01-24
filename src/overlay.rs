@@ -23,8 +23,11 @@ fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::Wind
     unsafe {
 	let mut all_shapes = Vec::new();
 	for player in entities::PLAYER_LIST.clone() {
-	    let pos: math::Vec3 = math::world_to_screen(player.pos, view_matrix, 1000.0, 700.0);
-	    let multiple: f32 = 1.0;
+	    let pos: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
+	    if pos.x == 0.0 && pos.y == 0.0 && pos.z == 0.0 {
+		continue;
+	    }
+	    let multiple: f32 = 0.001;
 	    
 	    all_shapes.push(Vertex { position: [pos.x, pos.y + 100.0 * multiple] });
             all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y + 100.0 * multiple] });
@@ -51,7 +54,7 @@ fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::Wind
             uniform mat4 transform;
 
             void main() {
-            gl_Position = transform * vec4(position, 0.0, 1.0);
+            gl_Position = vec4(position, 0.0, 1.0);
             }
             "#;
 
@@ -67,9 +70,9 @@ fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::Wind
 
 	let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
-	let (width, height) = display.get_framebuffer_dimensions();
-	let scale_x = 2.0 / width as f32;
-	let scale_y = 2.0 / height as f32;
+	/*let (width, height) = display.get_framebuffer_dimensions();
+	let scale_x = width as f32;
+	let scale_y = height as f32;
 	let transform = [
 	    [scale_x, 0.0, 0.0, 0.0],
 	    [0.0, scale_y, 0.0, 0.0],
@@ -78,10 +81,11 @@ fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::Wind
 	];
 	let uniforms = uniform! {
 	    transform: transform
-	};
+	};*/
+	
 	let mut target = display.draw();
 	target.clear_color(0.0, 0.0, 0.0, 0.0);
-	target.draw(&vertex_buffer, &indices, &program, &uniforms,
+	target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
 		    &Default::default()).unwrap();
 	target.finish().unwrap();
     }

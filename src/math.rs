@@ -104,7 +104,7 @@ pub fn calculate_angle(mut origin: Vec3, target: Vec3) -> Vec3 {
     results.y = radians_to_degrees(libm::asinf((target.z - origin.z) / origin.calc_distance(target.clone())));
     return results
 }
-pub fn world_to_screen(pos: Vec3, matrix: [f32; 16], window_height: f32, window_width: f32) -> Vec3 {
+pub fn world_to_screen(pos: Vec3, matrix: [f32; 16]) -> Vec3 {
     let mut camera_coords: Vec4 = Vec4 {
 	x: 0.0,
 	y: 0.0,
@@ -116,9 +116,9 @@ pub fn world_to_screen(pos: Vec3, matrix: [f32; 16], window_height: f32, window_
     camera_coords.z = pos.x * matrix[2] + pos.y * matrix[6] + pos.z * matrix[10] + matrix[14];
     camera_coords.w = pos.x * matrix[3] + pos.y * matrix[7] + pos.z * matrix[11] + matrix[15];
     // if off screen return blank vec
-    /*if camera_coords.w > 0.1 {
+    if camera_coords.w < 0.1 {
 	return Vec3::new(0.0, 0.0, 0.0);
-    }*/
+    }
 
     let mut ndc = Vec3::new(0.0, 0.0, 0.0);
     ndc.x = camera_coords.x / camera_coords.w;
@@ -126,9 +126,9 @@ pub fn world_to_screen(pos: Vec3, matrix: [f32; 16], window_height: f32, window_
     ndc.z = camera_coords.z / camera_coords.w;
 
     let mut screen = Vec3::new(0.0, 0.0, 0.0);
-    screen.x = (ndc.x * 0.5 + 0.5) * window_width;
-    screen.y = (1.0 - (ndc.y * 0.5 + 0.5)) * window_height; 
+    screen.x = ndc.x * 0.5 + 0.5;
+    screen.y = 1.0 - (ndc.y * 0.5 + 0.5); 
     screen.z = ndc.z;
 
-    return screen 
+    return ndc 
 }
