@@ -29,11 +29,19 @@ pub fn find_closest_target(game: &proc_mem::Process) {
 	if TOGGLE {
             for player in entities::PLAYER_LIST.clone() {
 		let target_angle = math::calculate_angle(entities::LOCAL_PLAYER.pos, player.pos);
-		/*let mut delta_angle = target_angle - local_player.view_angles;
+		let mut delta_angle = target_angle - entities::LOCAL_PLAYER.view_angles;
+		if delta_angle.x > 180.0
+		{
+		    delta_angle.x -= 360.0;
+		}
+		if delta_angle.x < -180.0
+		{
+		    delta_angle.x += 360.0;
+		}
+		//delta_angle.x = libm::fabsf(delta_angle.x);
 		delta_angle *= SMOOTH_VALUE;
-		delta_angle += local_player.view_angles;
-		println!("{},{}", delta_angle.x, delta_angle.y);*/
-		game.write_mem(entities::LOCAL_PLAYER.address + offsets::VIEW_ANGLES, target_angle);
+		delta_angle += entities::LOCAL_PLAYER.view_angles;
+		game.write_mem(entities::LOCAL_PLAYER.address + offsets::VIEW_ANGLES, delta_angle);
 		thread::sleep(Duration::from_millis(1));
             }
 	}
