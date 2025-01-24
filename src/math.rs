@@ -124,11 +124,6 @@ pub fn world_to_screen(pos: Vec3, matrix: [f32; 16]) -> Vec3 {
     ndc.x = camera_coords.x / camera_coords.w;
     ndc.y = camera_coords.y / camera_coords.w;
     ndc.z = camera_coords.z / camera_coords.w;
-
-    let mut screen = Vec3::new(0.0, 0.0, 0.0);
-    screen.x = ndc.x * 0.5 + 0.5;
-    screen.y = 1.0 - (ndc.y * 0.5 + 0.5); 
-    screen.z = ndc.z;
-
+    
     return ndc 
 }
