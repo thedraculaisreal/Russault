@@ -1,8 +1,7 @@
 use std::{thread, time::Duration};
-
 use crate::offsets;
 use crate::math;
-use crate::cheats;
+
 
 // gonna use global vars anymore they are cancer.
 pub static mut PLAYER_LIST: Vec<Player> = Vec::new();
