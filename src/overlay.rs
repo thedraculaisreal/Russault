@@ -31,6 +31,7 @@ pub fn create_overlay() {
 	.with_position(winit::dpi::Position::Logical(winit::dpi::LogicalPosition::new(345.0, 150.0)))
 	.with_decorations(false);
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().set_window_builder(window_builder).build(&event_loop);
+    // setting cursor passthrough
     let _ = window.set_cursor_hittest(false);
     // event_loop
     let game = Process::with_name("ac_client.exe").expect("Failed to find game");
@@ -42,7 +43,7 @@ pub fn create_overlay() {
 		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(offsets::VIEW_MATRIX)
 			.expect("couldnt find view_matrix");
 		    draw_to_screen(&display, view_matrix);
-		    thread::sleep(Duration::from_millis(10));
+		    thread::sleep(Duration::from_millis(2));
 		    window.request_redraw();
 		},
 		glium::winit::event::WindowEvent::CloseRequested => {
@@ -97,10 +98,10 @@ fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::Win
     [0.0, scale_y, 0.0, 0.0],
     [0.0, 0.0, 1.0, 0.0],
     [0.0, 0.0, 0.0, 1.0f32],
-];
+    ];
     let uniforms = uniform! {
     transform: transform
-};*/
+    };*/
     
     let mut target = display.draw();
     target.clear_color(0.0, 0.0, 0.0, 0.0);
@@ -114,20 +115,23 @@ fn draw_esp(view_matrix: [f32; 16]) -> Vec<Vertex> {
     unsafe {
 	let mut esp_boxes = Vec::new();
 	for player in entities::PLAYER_LIST.clone() {
-	    let feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
+	    let mut feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
 	    let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
 	    let difference = head.y - feet.y;
 	    if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
 		continue;
 	    }
+	    feet.z -= 0.90;
+	    feet.y = feet.y - feet.z;
+	    let x_diff = 0.25 - feet.z * 2.2;
 	    // top line segment
 	    esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
-            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
+            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
 	    // right line segment
-            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
-            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
+            esp_boxes.push(Vertex { position: [feet.x + x_diff, feet.y ] });
 	    // bottom line segment
-            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y ] });
             esp_boxes.push(Vertex { position: [feet.x , feet.y ] });
 	    // left line segment
             esp_boxes.push(Vertex { position: [feet.x , feet.y ] }); 
