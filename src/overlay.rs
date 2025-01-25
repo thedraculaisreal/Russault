@@ -123,7 +123,7 @@ fn draw_esp(view_matrix: [f32; 16]) -> Vec<Vertex> {
 	    }
 	    feet.z -= 0.90;
 	    feet.y = feet.y - feet.z;
-	    let x_diff = 0.25 - feet.z * 2.2;
+	    let x_diff = 0.38 - feet.z * 3.6;
 	    // top line segment
 	    esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
             esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
