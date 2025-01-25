@@ -21,25 +21,27 @@ static WINDOW_HEIGHT: u32 = 700;
 
 fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
     unsafe {
+	// my implementation of bounding boxes, pretty suspect tho.
 	let mut all_shapes = Vec::new();
 	for player in entities::PLAYER_LIST.clone() {
-	    let pos: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
-	    if pos.x == 0.0 && pos.y == 0.0 && pos.z == 0.0 {
+	    let feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
+	    let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
+	    let difference = head.y - feet.y;
+	    if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
 		continue;
 	    }
-	    let multiple: f32 = 0.001;
-	    
-	    all_shapes.push(Vertex { position: [pos.x, pos.y + 100.0 * multiple] });
-            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y + 100.0 * multiple] });
-
-            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y + 100.0 * multiple] });
-            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y] });
-
-            all_shapes.push(Vertex { position: [pos.x + 50.0 * multiple, pos.y] });
-            all_shapes.push(Vertex { position: [pos.x, pos.y] });
-
-            all_shapes.push(Vertex { position: [pos.x, pos.y] }); 
-            all_shapes.push(Vertex { position: [pos.x, pos.y + 100.0 * multiple] });
+	    // top line segment
+	    all_shapes.push(Vertex { position: [feet.x , feet.y + difference ] });
+            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
+	    // right line segment
+            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
+            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+	    // bottom line segment
+            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+            all_shapes.push(Vertex { position: [feet.x , feet.y ] });
+	    // left line segment
+            all_shapes.push(Vertex { position: [feet.x , feet.y ] }); 
+            all_shapes.push(Vertex { position: [feet.x , feet.y + difference ] });
 	}
 	if all_shapes.is_empty() {
 	    return

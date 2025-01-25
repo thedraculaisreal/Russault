@@ -10,6 +10,7 @@ pub static mut LOCAL_PLAYER: Player = Player {
     name: String::new(),
     health: 0,
     pos: math::Vec3::new_const(0.0,0.0,0.0),
+    origin: math::Vec3::new_const(0.0,0.0,0.0),
     view_angles: math::Vec3::new_const(0.0,0.0,0.0),
 };
 
@@ -19,18 +20,24 @@ pub struct Player {
     pub name: String,
     pub health: i32,
     pub pos: math::Vec3,
+    pub origin: math::Vec3,
     pub view_angles: math::Vec3,
 }
 
 impl Player {
     pub fn new(address: usize, game: &proc_mem::Process) -> Self {
-        let health: i32 = game.read_mem::<i32>(address.clone() + offsets::HEALTH).expect("couldnt read health value ");
-        let pos: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::POS).expect("couldnt read health value ");
-        let view_angles: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::VIEW_ANGLES).expect("couldnt read view angles");
+        let health: i32 = game.read_mem::<i32>(address.clone() + offsets::HEALTH)
+	    .expect("couldnt read health value ");
+        let pos: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::POS)
+	    .expect("couldnt read health value ");
+        let view_angles: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::VIEW_ANGLES)
+	    .expect("couldnt read view angles");
+	let origin: math::Vec3 = game.read_mem::<math::Vec3>(address.clone() + offsets::ORIGIN)
+	    .expect("couldnt read origin");
         //let pitch: f32 = game.read_mem::<f32>(address.clone() + offsets::PITCH).expect("couldnt read pitch value ");
         let name = Self::read_name(address.clone(), game);
         Self {
-            address , name , health , pos , view_angles ,
+            address , name , health , pos, origin , view_angles ,
         }
     }
     pub fn print_values(&self) {
