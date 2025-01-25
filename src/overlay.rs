@@ -19,80 +19,6 @@ implement_vertex!(Vertex, position);
 static WINDOW_WIDTH: u32 = 1000;
 static WINDOW_HEIGHT: u32 = 700; 
 
-fn create_shapes(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
-    unsafe {
-	// my implementation of bounding boxes, pretty suspect tho.
-	let mut all_shapes = Vec::new();
-	for player in entities::PLAYER_LIST.clone() {
-	    let feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
-	    let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
-	    let difference = head.y - feet.y;
-	    if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
-		continue;
-	    }
-	    // top line segment
-	    all_shapes.push(Vertex { position: [feet.x , feet.y + difference ] });
-            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
-	    // right line segment
-            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
-            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
-	    // bottom line segment
-            all_shapes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
-            all_shapes.push(Vertex { position: [feet.x , feet.y ] });
-	    // left line segment
-            all_shapes.push(Vertex { position: [feet.x , feet.y ] }); 
-            all_shapes.push(Vertex { position: [feet.x , feet.y + difference ] });
-	}
-	if all_shapes.is_empty() {
-	    return
-	}
-	let vertex_buffer = glium::VertexBuffer::new(display, &all_shapes).unwrap();
-	let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
-
-	let vertex_shader_src = r#"
-            #version 140
-
-            in vec2 position;
-            uniform mat4 transform;
-
-            void main() {
-            gl_Position = vec4(position, 0.0, 1.0);
-            }
-            "#;
-
-	let fragment_shader_src = r#"
-            #version 140
-
-            out vec4 color;
-
-            void main() {
-                color = vec4(1.0, 0.0, 0.0, 1.0);
-            }
-            "#;
-
-	let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
-
-	/*let (width, height) = display.get_framebuffer_dimensions();
-	let scale_x = width as f32;
-	let scale_y = height as f32;
-	let transform = [
-	    [scale_x, 0.0, 0.0, 0.0],
-	    [0.0, scale_y, 0.0, 0.0],
-	    [0.0, 0.0, 1.0, 0.0],
-	    [0.0, 0.0, 0.0, 1.0f32],
-	];
-	let uniforms = uniform! {
-	    transform: transform
-	};*/
-	
-	let mut target = display.draw();
-	target.clear_color(0.0, 0.0, 0.0, 0.0);
-	target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
-		    &Default::default()).unwrap();
-	target.finish().unwrap();
-    }
-}
-
 #[allow(deprecated)]
 pub fn create_overlay() {
     let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().expect("event loop building");
@@ -115,7 +41,8 @@ pub fn create_overlay() {
 		    // drawing to screen.
 		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(offsets::VIEW_MATRIX)
 			.expect("couldnt find view_matrix");
-		    create_shapes(&display, view_matrix);
+		    draw_to_screen(&display, view_matrix);
+		    thread::sleep(Duration::from_millis(10));
 		    window.request_redraw();
 		},
 		glium::winit::event::WindowEvent::CloseRequested => {
@@ -128,6 +55,87 @@ pub fn create_overlay() {
     });
 }
 
+fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
+    let esp_boxes = draw_esp(view_matrix);
+    // no players to draw clear opengl draw buffer
+    if esp_boxes.is_empty() {
+	let mut target = display.draw();
+	target.clear_color(0.0, 0.0, 0.0, 0.0);
+	target.finish().unwrap();
+	return
+    }
+    let vertex_buffer = glium::VertexBuffer::new(display, &esp_boxes).unwrap();
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
+
+    let vertex_shader_src = r#"
+        #version 140
+
+        in vec2 position;
+        uniform mat4 transform;
+        void main() {
+        gl_Position = vec4(position, 0.0, 1.0);
+        }
+        "#;
+
+    let fragment_shader_src = r#"
+        #version 140
+
+        out vec4 color;
+
+        void main() {
+            color = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+        "#;
+
+    let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
+
+    /*let (width, height) = display.get_framebuffer_dimensions();
+    let scale_x = width as f32;
+    let scale_y = height as f32;
+    let transform = [
+    [scale_x, 0.0, 0.0, 0.0],
+    [0.0, scale_y, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0f32],
+];
+    let uniforms = uniform! {
+    transform: transform
+};*/
+    
+    let mut target = display.draw();
+    target.clear_color(0.0, 0.0, 0.0, 0.0);
+    target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
+		&Default::default()).unwrap();
+    target.finish().unwrap();
+    
+}
+// my implementation of bounding boxes, pretty suspect tho.
+fn draw_esp(view_matrix: [f32; 16]) -> Vec<Vertex> {
+    unsafe {
+	let mut esp_boxes = Vec::new();
+	for player in entities::PLAYER_LIST.clone() {
+	    let feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
+	    let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
+	    let difference = head.y - feet.y;
+	    if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
+		continue;
+	    }
+	    // top line segment
+	    esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
+            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
+	    // right line segment
+            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y + difference ] });
+            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+	    // bottom line segment
+            esp_boxes.push(Vertex { position: [feet.x + 0.05 , feet.y ] });
+            esp_boxes.push(Vertex { position: [feet.x , feet.y ] });
+	    // left line segment
+            esp_boxes.push(Vertex { position: [feet.x , feet.y ] }); 
+            esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
+	}
+	return esp_boxes
+    }
+}
 /*
 // disable interaction with window
 glium::winit::event::WindowEvent::KeyboardInput {..} => (),
