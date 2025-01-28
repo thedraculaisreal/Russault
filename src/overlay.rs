@@ -1,13 +1,9 @@
 extern crate glium;
-use crate::offsets;
-use crate::entities;
+use crate::entities::Player;
 use crate::math;
-use glium::winit;
 use crate::overlay::glium::Surface;
-use crate::overlay::winit::window::WindowAttributes;
-use proc_mem::Process;
-use std::thread;
-use std::time::Duration;
+
+
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
 
 #[derive(Copy, Clone)]
@@ -16,48 +12,11 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position);
 
-static WINDOW_WIDTH: u32 = 1000;
-static WINDOW_HEIGHT: u32 = 700; 
+pub static WINDOW_WIDTH: u32 = 1000;
+pub static WINDOW_HEIGHT: u32 = 700; 
 
-#[allow(deprecated)]
-pub fn create_overlay() {
-    let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().expect("event loop building");
-    let window_builder = WindowAttributes::new()
-	.with_transparent(true)
-	.with_title("Russault overlay")
-	.with_window_level(winit::window::WindowLevel::AlwaysOnTop)
-	.with_active(false)
-	.with_inner_size(winit::dpi::LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
-	.with_position(winit::dpi::Position::Logical(winit::dpi::LogicalPosition::new(345.0, 150.0)))
-	.with_decorations(false);
-    let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().set_window_builder(window_builder).build(&event_loop);
-    // setting cursor passthrough
-    let _ = window.set_cursor_hittest(false);
-    // event_loop
-    let game = Process::with_name("ac_client.exe").expect("Failed to find game");
-    let _ = event_loop.run(move |event, window_target| {
-	match event {
-            glium::winit::event::Event::WindowEvent { event, .. } => match event {
-		glium::winit::event::WindowEvent::RedrawRequested => {
-		    // drawing to screen.
-		    let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(offsets::VIEW_MATRIX)
-			.expect("couldnt find view_matrix");
-		    draw_to_screen(&display, view_matrix);
-		    thread::sleep(Duration::from_millis(2));
-		    window.request_redraw();
-		},
-		glium::winit::event::WindowEvent::CloseRequested => {
-		    window_target.exit()
-		},
-		_ => (),
-	    }
-	    _ => (),
-	}
-    });
-}
-
-fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16]) {
-    let esp_boxes = draw_esp(view_matrix);
+pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16], player_list: &Vec<Player> ){
+    let esp_boxes = draw_esp(view_matrix, player_list);
     // no players to draw clear opengl draw buffer
     if esp_boxes.is_empty() {
 	let mut target = display.draw();
@@ -108,37 +67,34 @@ fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::Win
     target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
 		&Default::default()).unwrap();
     target.finish().unwrap();
-    
 }
 // my implementation of bounding boxes, pretty suspect tho.
-fn draw_esp(view_matrix: [f32; 16]) -> Vec<Vertex> {
-    unsafe {
-	let mut esp_boxes = Vec::new();
-	for player in entities::PLAYER_LIST.clone() {
-	    let mut feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
-	    let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
-	    let difference = head.y - feet.y;
-	    if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
-		continue;
-	    }
-	    feet.z -= 0.90;
-	    feet.y = feet.y - feet.z;
-	    let x_diff = 0.38 - feet.z * 3.6;
-	    // top line segment
-	    esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
-            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
-	    // right line segment
-            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
-            esp_boxes.push(Vertex { position: [feet.x + x_diff, feet.y ] });
-	    // bottom line segment
-            esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y ] });
-            esp_boxes.push(Vertex { position: [feet.x , feet.y ] });
-	    // left line segment
-            esp_boxes.push(Vertex { position: [feet.x , feet.y ] }); 
-            esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
+fn draw_esp(view_matrix: [f32; 16], player_list: &Vec<Player>) -> Vec<Vertex> {
+    let mut esp_boxes = Vec::new();
+    for player in player_list {
+	let mut feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
+	let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
+	let difference = head.y - feet.y;
+	if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
+	    continue;
 	}
-	return esp_boxes
+	feet.z -= 0.90;
+	feet.y = feet.y - feet.z;
+	let x_diff = 0.38 - feet.z * 3.6;
+	// top line segment
+	esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
+        esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
+	// right line segment
+        esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y + difference ] });
+        esp_boxes.push(Vertex { position: [feet.x + x_diff, feet.y ] });
+	// bottom line segment
+        esp_boxes.push(Vertex { position: [feet.x + x_diff , feet.y ] });
+        esp_boxes.push(Vertex { position: [feet.x , feet.y ] });
+	// left line segment
+        esp_boxes.push(Vertex { position: [feet.x , feet.y ] }); 
+        esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
     }
+    return esp_boxes
 }
 /*
 // disable interaction with window

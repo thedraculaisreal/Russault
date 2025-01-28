@@ -10,5 +10,6 @@ glutin = "0.32.2"
 lazy_static = "1.5.0"
 libm = "0.2.11"
 proc_mem = "0.1.6"
+rusttype = "0.9.3"
 winit = "0.30.8"
 
