@@ -5,11 +5,18 @@ edition = "2021"
 
 [dependencies]
 device_query = "2.1.0"
-glium = "0.36.0"
-glutin = "0.32.2"
-lazy_static = "1.5.0"
 libm = "0.2.11"
 proc_mem = "0.1.6"
-rusttype = "0.9.3"
-winit = "0.30.8"
 
+[dependencies.sdl2]
+version = "0.37"
+default-features = false
+features = ["ttf","image","gfx","mixer","static-link","use-vcpkg"]
+
+[package.metadata.vcpkg]
+dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "2024.05.24" # release 2024.05.24 # to check for a new one, check https://github.com/microsoft/vcpkg/releases
+
+[package.metadata.vcpkg.target]
+i686-pc-windows-msvc = { triplet = "x86-windows-static-md" }

@@ -55,7 +55,8 @@ pub fn entity_list_loop(game: &proc_mem::Process) -> (Vec<Player>, Player) {
 	.expect("couldnt find entity_list address");
     let local_player = Player::new(&local_player_addr, game);
     for i in 1..=player_count {
-	let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i)).expect("couldnt find entity_list address");
+	let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i))
+	    .expect("couldnt find entity_list address");
 	let player = Player::new(&player_address, game);
 	player_list.push(player);
 	thread::sleep(Duration::from_millis(1));
