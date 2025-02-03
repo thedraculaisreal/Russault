@@ -1,8 +1,9 @@
 extern crate glium;
+extern crate glyph_brush;
 use crate::entities::Player;
 use crate::math;
 use crate::overlay::glium::Surface;
-
+use std::fs::read;
 
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
 
@@ -15,9 +16,11 @@ implement_vertex!(Vertex, position);
 pub static WINDOW_WIDTH: u32 = 1000;
 pub static WINDOW_HEIGHT: u32 = 700; 
 
-pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16], player_list: &Vec<Player>, glyph_brush: glyph_brush::GlyphBrush<Vertex> ){
+pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16], player_list: &Vec<Player> ){
+    let file_font = read("/Users/black/projects/rust/Russault/fonts/SIXTY.TTF").unwrap();
+    let font = glyph_brush::ab_glyph::FontArc::try_from_vec(file_font).unwrap();
+    let mut glyph_builder = glyph_brush::GlyphBrushBuilder::using_font(font).build();
     let esp_boxes = draw_esp(view_matrix, player_list);
-    let text = draw_text(view_matrix, player_list);
     // no players to draw clear opengl draw buffer
     if esp_boxes.is_empty() {
 	let mut target = display.draw();
@@ -27,27 +30,6 @@ pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface:
     }
     let vertex_buffer = glium::VertexBuffer::new(display, &esp_boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
-
-    let vertex_shader = r#"
-        #version 140
-        in vec2 position;
-        in vec2 tex_coords;
-        out vec2 v_tex_coords;
-        void main() {
-            gl_Position = vec4(position, 0.0, 1.0);
-            v_tex_coords = tex_coords;
-        }
-    "#;
-
-    let fragment_shader = r#"
-        #version 140
-        in vec2 v_tex_coords;
-        out vec4 color;
-        uniform sampler2D tex;
-        void main() {
-            color = texture(tex, v_tex_coords);
-        }
-    "#;
     
     let vertex_shader_src = r#"
         #version 140
@@ -70,7 +52,6 @@ pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface:
         "#;
 
     let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
-    let program_text = glium::Program::from_source(display, vertex_shader, fragment_shader, None).unwrap();
     
     /*let (width, height) = display.get_framebuffer_dimensions();
     let scale_x = width as f32;
@@ -87,8 +68,10 @@ pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface:
     
     let mut target = display.draw();
     target.clear_color(0.0, 0.0, 0.0, 0.0);
-    glyph_brush.queue_text("Hello, Glium!", 0.0, 0.0, 32.0, [1.0, 1.0, 1.0, 1.0]);
-    glyph_brush.draw_queued(&mut target, &program, 0.0, 0.0);
+    // text draw
+    glyph_builder.queue(glyph_brush::Section::default().add_text(glyph_brush::Text::new("Hell glyph")));
+    glyph_builder.process_queued();
+    // esp draw
     target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
 		&Default::default()).unwrap();
     target.finish().unwrap();
@@ -120,10 +103,6 @@ fn draw_esp(view_matrix: [f32; 16], player_list: &Vec<Player>) -> Vec<Vertex> {
         esp_boxes.push(Vertex { position: [feet.x , feet.y + difference ] });
     }
     return esp_boxes
-}
-
-pub fn draw_text(view_matrix: [f32; 16], player_list: &Vec<Player>) -> Vec<Vertex> {
-    
 }
     
 /*
