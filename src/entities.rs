@@ -4,6 +4,12 @@ use proc_mem::ProcMemError;
 use crate::offsets;
 use crate::math;
 
+pub enum MemoryError {
+    NotInGame,
+    AddressInvalid,
+    FailedToRead,
+}
+
 #[derive(Default , Clone)]
 pub struct Player {
     pub address: usize,
@@ -47,23 +53,62 @@ impl Player {
     }
 }   
 
-pub fn entity_list_loop(game: &proc_mem::Process) -> Result<Vec<Player>, ProcMemError> {
+pub fn entity_list_loop(game: &proc_mem::Process) -> Result<Vec<Player>, MemoryError> {
     let mut player_list: Vec<Player> = Vec::new();
     let player_count_result = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT);
     let player_count = match player_count_result {
 	Ok(player_count) => player_count,
-	Err(e) => return Err(e),
+	Err(e) => match Err::<MemoryError, ProcMemError>(e) {
+	    Err(ProcMemError::ReadMemoryError) => {
+		println!("Failed to read value at player_count_address: 0x{:x}", (game.process_base_address + offsets::PLAYER_COUNT));
+		return Err(MemoryError::FailedToRead)
+	    },
+	    _ => {
+		println!("player_count_address invalid: 0x{:x}", (game.process_base_address + offsets::PLAYER_COUNT));
+		return Err(MemoryError::AddressInvalid)
+	    },
+	},
     };
     if player_count <= 0 {
 	// if not in game
 	// we will handle this in the cheat loop, so that it keeps retrying to get the player_count, and doesnt go past
 	thread::sleep(Duration::from_millis(100));
-	return Err(ProcMemError::ReadMemoryError)
+	return Err(MemoryError::NotInGame)
     }
-    let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST)?;
+    let entity_list_addr_result = game.read_mem::<usize>(offsets::ENTITY_LIST);
+    let entity_list_addr = match entity_list_addr_result {
+	Ok(entity_list_addr) => entity_list_addr,
+	Err(e) => match Err::<MemoryError, ProcMemError>(e) {
+	    Err(ProcMemError::ReadMemoryError) => {
+		println!("Failed to read value at entity_list_address: 0x{:x}", offsets::ENTITY_LIST);
+		return Err(MemoryError::FailedToRead)
+	    },
+	    _ => {
+		println!("entity_list_address invalid: 0x{:x}", offsets::ENTITY_LIST);
+		return Err(MemoryError::AddressInvalid)
+	    },
+	},
+    };
     for i in 1..=player_count {
-	let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i))?;
+	let player_address_result = game.read_mem::<usize>(entity_list_addr + (0x4 * i));
+	let player_address = match player_address_result {
+	    Ok(player_address) => player_address,
+	    Err(e) => match Err::<MemoryError, ProcMemError>(e) {
+		Err(ProcMemError::ReadMemoryError) => {
+		    println!("Failed to read value at player_address: 0x{:x} at index:{}", (entity_list_addr + (0x4 * i)) ,i);
+		    return Err(MemoryError::FailedToRead)
+		},
+		_ => {
+		    println!("player_address: 0x{:x} invalid at index {}", (entity_list_addr + (0x4 * i)) , i);
+		    return Err(MemoryError::AddressInvalid)
+		},
+	    },
+	};
 	let player = Player::new(&player_address, game);
+	// skips dead players
+	if player.health <= 0 || player.health > 100 {
+	    continue;
+	}
 	player_list.push(player);
 	thread::sleep(Duration::from_millis(1));
     }

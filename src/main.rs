@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 #[macro_use]
 extern crate glium;
-use proc_mem::{ProcMemError, Process};
+use proc_mem::Process;
 use winit::window::WindowAttributes;
 use crate::glium::Surface;
+use entities::MemoryError;
 
 mod entities;
 mod offsets;
@@ -50,17 +51,17 @@ fn cheat_loop(display: &glium::backend::glutin::Display<glutin::surface::WindowS
     let player_list = match player_list_result {
 	Ok(player_list) => player_list,
 	Err(e) => match e {
-	    ProcMemError::ReadMemoryError => {
+	    MemoryError::NotInGame => {
 		let mut target = display.draw();
 		target.clear_color(0.0, 0.0, 0.0, 0.0);
 		target.finish().unwrap();
 		return
 	    },
-	    _ => {
-		let mut target = display.draw();
-		target.clear_color(0.0, 0.0, 0.0, 0.0);
-		target.finish().unwrap();
-		return
+	    MemoryError::FailedToRead => {
+		panic!("Failed to read memory check address in console log.")
+	    },
+	    MemoryError::AddressInvalid => {
+		panic!("Invalid offset/address check console log")
 	    },
 	},
     };
