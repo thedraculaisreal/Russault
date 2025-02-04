@@ -3,7 +3,6 @@ extern crate glyph_brush;
 use crate::entities::Player;
 use crate::math;
 use crate::overlay::glium::Surface;
-use std::fs::read;
 
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
 
@@ -17,9 +16,9 @@ pub static WINDOW_WIDTH: u32 = 1000;
 pub static WINDOW_HEIGHT: u32 = 700; 
 
 pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, view_matrix: [f32; 16], player_list: &Vec<Player> ){
-    let file_font = read("/Users/black/projects/rust/Russault/fonts/SIXTY.TTF").unwrap();
+    /*let file_font = read("/Users/black/projects/rust/Russault/fonts/SIXTY.TTF").unwrap();
     let font = glyph_brush::ab_glyph::FontArc::try_from_vec(file_font).unwrap();
-    let mut glyph_builder = glyph_brush::GlyphBrushBuilder::using_font(font).build();
+    let mut glyph_builder = glyph_brush::GlyphBrushBuilder::using_font(font).build();*/
     let esp_boxes = draw_esp(view_matrix, player_list);
     // no players to draw clear opengl draw buffer
     if esp_boxes.is_empty() {
@@ -69,8 +68,8 @@ pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface:
     let mut target = display.draw();
     target.clear_color(0.0, 0.0, 0.0, 0.0);
     // text draw
-    glyph_builder.queue(glyph_brush::Section::default().add_text(glyph_brush::Text::new("Hell glyph")));
-    glyph_builder.process_queued();
+    /*glyph_builder.queue(glyph_brush::Section::default().add_text(glyph_brush::Text::new("Hell glyph")));
+    glyph_builder.process_queued();*/
     // esp draw
     target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
 		&Default::default()).unwrap();

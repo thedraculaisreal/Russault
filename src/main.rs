@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 #[macro_use]
 extern crate glium;
-use proc_mem::Process;
+use proc_mem::{ProcMemError, Process};
 use winit::window::WindowAttributes;
+use crate::glium::Surface;
 
 mod entities;
 mod offsets;
@@ -10,10 +11,9 @@ mod math;
 mod cheats;
 mod overlay;
 #[allow(deprecated)]
-fn main() {
-    let game = Process::with_name("ac_client.exe")
-	.expect("Failed to find game");
-    let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().expect("event loop building");
+fn main() -> Result<(), String> {
+    let game = Process::with_name("ac_client.exe").unwrap();
+    let event_loop = glium::winit::event_loop::EventLoopBuilder::new().build().unwrap();
     let window_builder = WindowAttributes::new()
 	.with_transparent(true)
 	.with_title("Russault overlay")
@@ -41,10 +41,30 @@ fn main() {
 	    _ => (),
 	}
     });
+
+    Ok(())
 }
 
 fn cheat_loop(display: &glium::backend::glutin::Display<glutin::surface::WindowSurface>, game: &proc_mem::Process) {
-    let (player_list, local_player) = entities::entity_list_loop(game);
+    let player_list_result = entities::entity_list_loop(game);
+    let player_list = match player_list_result {
+	Ok(player_list) => player_list,
+	Err(e) => match e {
+	    ProcMemError::ReadMemoryError => {
+		let mut target = display.draw();
+		target.clear_color(0.0, 0.0, 0.0, 0.0);
+		target.finish().unwrap();
+		return
+	    },
+	    _ => {
+		let mut target = display.draw();
+		target.clear_color(0.0, 0.0, 0.0, 0.0);
+		target.finish().unwrap();
+		return
+	    },
+	},
+    };
+    let local_player = entities::get_local_player(game);
     cheats::run_aimbot(game, &player_list, &local_player);
     let view_matrix: [f32; 16] = game.read_mem::<[f32; 16]>(offsets::VIEW_MATRIX)
 	.expect("couldnt find view_matrix");

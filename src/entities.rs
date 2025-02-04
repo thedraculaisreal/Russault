@@ -1,4 +1,6 @@
 use std::{thread, time::Duration};
+use proc_mem::ProcMemError;
+
 use crate::offsets;
 use crate::math;
 
@@ -45,21 +47,32 @@ impl Player {
     }
 }   
 
-pub fn entity_list_loop(game: &proc_mem::Process) -> (Vec<Player>, Player) {
+pub fn entity_list_loop(game: &proc_mem::Process) -> Result<Vec<Player>, ProcMemError> {
     let mut player_list: Vec<Player> = Vec::new();
-    let player_count: usize = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT)
-	.expect("couldnt find player_count");
-    let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST)
-	.expect("couldnt find entity_list address");
-    let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER)
-	.expect("couldnt find entity_list address");
-    let local_player = Player::new(&local_player_addr, game);
+    let player_count_result = game.read_mem::<usize>(game.process_base_address + offsets::PLAYER_COUNT);
+    let player_count = match player_count_result {
+	Ok(player_count) => player_count,
+	Err(e) => return Err(e),
+    };
+    if player_count <= 0 {
+	// if not in game
+	// we will handle this in the cheat loop, so that it keeps retrying to get the player_count, and doesnt go past
+	thread::sleep(Duration::from_millis(100));
+	return Err(ProcMemError::ReadMemoryError)
+    }
+    let entity_list_addr = game.read_mem::<usize>(offsets::ENTITY_LIST)?;
     for i in 1..=player_count {
-	let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i))
-	    .expect("couldnt find entity_list address");
+	let player_address = game.read_mem::<usize>(entity_list_addr + (0x4 * i))?;
 	let player = Player::new(&player_address, game);
 	player_list.push(player);
 	thread::sleep(Duration::from_millis(1));
     }
-    return (player_list, local_player)
+    Ok(player_list)
+}
+
+pub fn get_local_player(game: &proc_mem::Process) -> Player {
+    let local_player_addr = game.read_mem::<usize>(game.process_base_address + offsets::LOCAL_PLAYER)
+        .expect("failed to read local_player_addr");
+    let local_player = Player::new(&local_player_addr, game);
+    return local_player
 }
