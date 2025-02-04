@@ -40,6 +40,11 @@ impl Vec3 {
         self.z -= target.z;
         self.calc_length()
     }
+    pub fn absf(&mut self) {
+	self.x = libm::fabsf(self.x);
+	self.y = libm::fabsf(self.y);
+	self.z = libm::fabsf(self.z);
+    }
 }
 impl Add for Vec3 {
     type Output = Self;
