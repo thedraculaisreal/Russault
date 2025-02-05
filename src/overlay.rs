@@ -1,7 +1,7 @@
 extern crate glium;
 extern crate glyph_brush;
 use crate::entities::Player;
-use crate::math;
+use rustbot::*;
 use crate::overlay::glium::Surface;
 
 // my source for learning glium and glutin https://github.com/glium/glium/blob/master/book/tuto-01-getting-started.md
@@ -79,8 +79,8 @@ pub fn draw_to_screen(display: &glium::backend::glutin::Display<glutin::surface:
 fn draw_esp(view_matrix: [f32; 16], player_list: &Vec<Player>) -> Vec<Vertex> {
     let mut esp_boxes = Vec::new();
     for player in player_list {
-	let mut feet: math::Vec3 = math::world_to_screen(player.pos, view_matrix);
-	let head: math::Vec3 = math::world_to_screen(player.origin, view_matrix);
+	let mut feet: Vec3 = world_to_screen(player.pos, view_matrix);
+	let head: Vec3 = world_to_screen(player.origin, view_matrix);
 	let difference = head.y - feet.y;
 	if feet.x == 0.0 && feet.y == 0.0 && feet.z == 0.0 {
 	    continue;

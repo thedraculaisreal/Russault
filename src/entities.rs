@@ -1,8 +1,8 @@
 use std::{thread, time::Duration};
 use proc_mem::ProcMemError;
+use rustbot::*;
 
 use crate::offsets;
-use crate::math;
 
 pub enum MemoryError {
     NotInGame,
@@ -15,20 +15,20 @@ pub struct Player {
     pub address: usize,
     pub name: String,
     pub health: i32,
-    pub pos: math::Vec3,
-    pub origin: math::Vec3,
-    pub view_angles: math::Vec3,
+    pub pos: Vec3,
+    pub origin: Vec3,
+    pub view_angles: Vec3,
 }
 
 impl Player {
     pub fn new(address: &usize, game: &proc_mem::Process) -> Self {
         let health: i32 = game.read_mem::<i32>(address + offsets::HEALTH)
 	    .expect("couldnt read health value ");
-        let pos: math::Vec3 = game.read_mem::<math::Vec3>(address + offsets::POS)
+        let pos: Vec3 = game.read_mem::<Vec3>(address + offsets::POS)
 	    .expect("couldnt read pos value ");
-        let view_angles: math::Vec3 = game.read_mem::<math::Vec3>(address + offsets::VIEW_ANGLES)
+        let view_angles: Vec3 = game.read_mem::<Vec3>(address + offsets::VIEW_ANGLES)
 	    .expect("couldnt read view angles");
-	let origin: math::Vec3 = game.read_mem::<math::Vec3>(address + offsets::ORIGIN)
+	let origin: Vec3 = game.read_mem::<Vec3>(address + offsets::ORIGIN)
 	    .expect("couldnt read origin");
         //let pitch: f32 = game.read_mem::<f32>(address.clone() + offsets::PITCH).expect("couldnt read pitch value ");
         let name = Self::read_name(address, game);

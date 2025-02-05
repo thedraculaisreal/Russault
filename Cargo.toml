@@ -13,6 +13,7 @@ glyph_brush = "0.7.11"
 lazy_static = "1.5.0"
 libm = "0.2.11"
 proc_mem = "0.1.6"
+rustbot = "0.2.1"
 rusttype = "0.9.3"
 winit = "0.30.8"
 

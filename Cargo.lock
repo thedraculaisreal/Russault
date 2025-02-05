@@ -430,6 +430,7 @@ dependencies = [
  "lazy_static",
  "libm",
  "proc_mem",
+ "rustbot",
  "rusttype 0.9.3",
  "winit",
 ]
@@ -1408,6 +1409,15 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "rustbot"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88c2a03e2a0a7576d6281ef2b32ff7f0b5ac1dea1effcff7b1826cdb0f4b077d"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "rustc-demangle"

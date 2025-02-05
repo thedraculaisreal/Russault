@@ -8,9 +8,9 @@ use entities::MemoryError;
 
 mod entities;
 mod offsets;
-mod math;
 mod cheats;
 mod overlay;
+
 #[allow(deprecated)]
 fn main() -> Result<(), String> {
     let game = Process::with_name("ac_client.exe").unwrap();

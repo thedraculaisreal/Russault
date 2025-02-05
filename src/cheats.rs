@@ -1,11 +1,11 @@
 use crate::entities::*;
 use crate::offsets;
-use crate::math;
+use rustbot::*;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use std::thread;
 use std::time::Duration;
 
-static SMOOTH_VALUE: math::Vec3 = math::Vec3 {
+static SMOOTH_VALUE: Vec3 = Vec3 {
     x: 0.01,
     y: 0.01,
     z: 0.01,
@@ -29,10 +29,10 @@ pub fn run_aimbot(game: &proc_mem::Process, player_list: &Vec<Player>, local_pla
 	    LAST_STATE = false;  
 	}
 	if TOGGLE {
-	    let mut closest_target = math::Vec3::new(0.0,0.0,0.0);
+	    let mut closest_target = Vec3::new(0.0,0.0,0.0);
 	    let mut closest_angle: f32 = 999999.9;
             for player in player_list {
-		let target_angle = math::calculate_angle(local_player.pos, player.pos);
+		let target_angle = calculate_angle(local_player.pos, player.pos);
 		let mut delta_angle = target_angle - local_player.view_angles;
 		if delta_angle.x > 180.0
 		{
@@ -67,7 +67,7 @@ pub fn run_aimbot(game: &proc_mem::Process, player_list: &Vec<Player>, local_pla
 
 static FOV: f32 = 30.0;
 
-fn is_in_fov(delta_angle: &mut math::Vec3) -> bool {
+fn is_in_fov(delta_angle: &mut Vec3) -> bool {
     delta_angle.absf();
     if delta_angle.x > FOV || delta_angle.y > FOV {
 	return false
